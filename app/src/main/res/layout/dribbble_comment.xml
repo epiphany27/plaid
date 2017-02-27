@@ -41,9 +41,9 @@
         android:padding="@dimen/avatar_padding"
         android:stateListAnimator="@animator/raise"
         android:src="@drawable/avatar_placeholder"
-        android:foreground="@drawable/mid_grey_ripple" />
+        android:foreground="@drawable/avatar_ripple" />
 
-    <TextView
+    <io.plaidapp.ui.widget.BaselineGridTextView
         android:id="@+id/comment_time_ago"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -76,11 +76,12 @@
         tools:text="Blah blah blah blah blah blah blah blah blah blah blah blah blah"
         style="@style/Widget.Plaid.Comment" />
 
-    <TextView
+    <io.plaidapp.ui.widget.BaselineGridTextView
         android:id="@+id/comment_likes_count"
         android:layout_width="wrap_content"
         android:layout_height="@dimen/comment_actions_height"
         android:padding="@dimen/spacing_normal"
+        android:paddingTop="@dimen/spacing_normal"
         android:layout_marginEnd="@dimen/comment_like_margin_adjustment"
         android:gravity="end|center_vertical"
         android:layout_alignParentEnd="true"
@@ -98,7 +99,7 @@
         android:layout_marginEnd="@dimen/comment_like_margin_adjustment"
         android:layout_toStartOf="@id/comment_likes_count"
         android:layout_below="@id/comment_text"
-        android:src="@drawable/comment_heart"
+        android:src="@drawable/asl_comment_heart"
         android:background="?android:selectableItemBackgroundBorderless"
         android:visibility="gone" />
 
@@ -111,7 +112,6 @@
         android:layout_below="@id/comment_text"
         android:src="@drawable/ic_reply"
         android:background="?android:selectableItemBackgroundBorderless"
-        android:stateListAnimator="@animator/reply"
         android:visibility="gone" />
 
 </io.plaidapp.ui.widget.ForegroundRelativeLayout>

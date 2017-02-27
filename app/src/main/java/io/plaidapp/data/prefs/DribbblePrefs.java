@@ -22,12 +22,21 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.text.TextUtils;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import io.plaidapp.BuildConfig;
+import io.plaidapp.data.api.AuthInterceptor;
+import io.plaidapp.data.api.DenvelopingConverter;
+import io.plaidapp.data.api.dribbble.DribbbleService;
 import io.plaidapp.data.api.dribbble.model.User;
+import okhttp3.OkHttpClient;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * Storing dribbble user state.
@@ -59,6 +68,7 @@ public class DribbblePrefs {
     private String userUsername;
     private String userAvatar;
     private String userType;
+    private DribbbleService api;
     private List<DribbbleLoginStatusListener> loginStatusListeners;
 
     public static DribbblePrefs get(Context context) {
@@ -84,13 +94,13 @@ public class DribbblePrefs {
         }
     }
 
-    public boolean isLoggedIn() {
-        return isLoggedIn;
+    public interface DribbbleLoginStatusListener {
+        void onDribbbleLogin();
+        void onDribbbleLogout();
     }
 
-    public String getAccessToken() {
-        return !TextUtils.isEmpty(accessToken) ? accessToken
-                : BuildConfig.DRIBBBLE_CLIENT_ACCESS_TOKEN;
+    public boolean isLoggedIn() {
+        return isLoggedIn;
     }
 
     public void setAccessToken(String accessToken) {
@@ -98,6 +108,7 @@ public class DribbblePrefs {
             this.accessToken = accessToken;
             isLoggedIn = true;
             prefs.edit().putString(KEY_ACCESS_TOKEN, accessToken).apply();
+            createApi();
             dispatchLoginEvent();
         }
     }
@@ -149,6 +160,11 @@ public class DribbblePrefs {
                 .build();
     }
 
+    public DribbbleService getApi() {
+        if (api == null) createApi();
+        return api;
+    }
+
     public void logout() {
         isLoggedIn = false;
         accessToken = null;
@@ -164,6 +180,7 @@ public class DribbblePrefs {
         editor.putString(KEY_USER_AVATAR, null);
         editor.putString(KEY_USER_TYPE, null);
         editor.apply();
+        createApi();
         dispatchLogoutEvent();
     }
 
@@ -185,7 +202,7 @@ public class DribbblePrefs {
     }
 
     private void dispatchLoginEvent() {
-        if (loginStatusListeners != null && loginStatusListeners.size() > 0) {
+        if (loginStatusListeners != null && !loginStatusListeners.isEmpty()) {
             for (DribbbleLoginStatusListener listener : loginStatusListeners) {
                 listener.onDribbbleLogin();
             }
@@ -193,16 +210,32 @@ public class DribbblePrefs {
     }
 
     private void dispatchLogoutEvent() {
-        if (loginStatusListeners != null && loginStatusListeners.size() > 0) {
+        if (loginStatusListeners != null && !loginStatusListeners.isEmpty()) {
             for (DribbbleLoginStatusListener listener : loginStatusListeners) {
                 listener.onDribbbleLogout();
             }
         }
     }
 
-    public interface DribbbleLoginStatusListener {
-        void onDribbbleLogin();
-        void onDribbbleLogout();
+    private void createApi() {
+        final OkHttpClient client = new OkHttpClient.Builder()
+                .addInterceptor(new AuthInterceptor(getAccessToken()))
+                .build();
+        final Gson gson = new GsonBuilder()
+                .setDateFormat(DribbbleService.DATE_FORMAT)
+                .create();
+        api = new Retrofit.Builder()
+                .baseUrl(DribbbleService.ENDPOINT)
+                .client(client)
+                .addConverterFactory(new DenvelopingConverter(gson))
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .build()
+                .create((DribbbleService.class));
+    }
+
+    private String getAccessToken() {
+        return !TextUtils.isEmpty(accessToken) ? accessToken
+                : BuildConfig.DRIBBBLE_CLIENT_ACCESS_TOKEN;
     }
 
 }
